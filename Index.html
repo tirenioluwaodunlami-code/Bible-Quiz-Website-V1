@@ -187,10 +187,10 @@
       <nav>
         <div class="logo">Bible Quiz</div>
         <div class="nav-links">
-          <a href="#">Home</a>
-          <a href="#">Levels</a>
-          <a href="#">Stories</a>
-          <a href="#">About</a>
+          <a href="#" class="notify-work">Home</a>
+          <a href="#" class="notify-work">Levels</a>
+          <a href="#" class="notify-work">Stories</a>
+          <a href="#" class="notify-work">About</a>
         </div>
       </nav>
     </div>
@@ -205,29 +205,27 @@
           Choose your difficulty and begin your next challenge.
         </p>
         <div class="buttons">
-          <button class="btn btn-primary">Start Quiz</button>
-          <button class="btn btn-secondary">View Stories</button>
+          <button id="startQuizBtn" class="btn btn-primary">Start Quiz</button>
+          <button class="btn btn-secondary notify-work">View Stories</button>
         </div>
       </div>
 
-      <div class="hero-card">
-        <h3>Choose difficulty</h3>
-        <div class="difficulty-grid">
-          <div class="difficulty-card easy">
-            <h4>Easy</h4>
-            <span>Beginner Bible facts and famous stories</span>
-          </div>
-          <div class="difficulty-card medium">
-            <h4>Medium</h4>
-            <span>Character knowledge and story recall</span>
-          </div>
-          <div class="difficulty-card hard">
-            <h4>Hard</h4>
-            <span>Advanced questions and deeper biblical themes</span>
-          </div>
-        </div>
-      </div>
+      <!-- Difficulty selection has been moved to the overlay modal triggered by Start Quiz -->
     </section>
+
+    <!-- Difficulty overlay/modal (hidden by default) -->
+    <div id="difficultyOverlay" style="display:none; position:fixed; inset:0; z-index:9999;">
+      <div id="overlayBackdrop" style="position:absolute; inset:0; background:rgba(0,0,0,0.6);"></div>
+      <div style="position:relative; max-width:420px; margin:80px auto; background:white; border-radius:12px; padding:20px; z-index:10000;">
+        <h3 style="margin-top:0">Select Difficulty</h3>
+        <div style="display:flex; gap:10px; flex-direction:column;">
+          <a class="btn btn-primary" href="quiz-easy.html" style="text-align:center">Easy</a>
+          <a class="btn btn-primary" href="quiz-medium.html" style="text-align:center">Medium</a>
+          <a class="btn btn-primary" href="quiz-hard.html" style="text-align:center">Hard</a>
+        </div>
+        <div style="margin-top:12px; text-align:right;"><button id="closeOverlay" class="btn" style="background:#eef2ff;">Cancel</button></div>
+      </div>
+    </div>
 
     <section class="features">
       <div class="feature">
@@ -250,7 +248,43 @@
   </main>
 
   <footer>
-    <a href="subpage1.html">Contact Us</a>
+    <a href="contact.html">Contact Us</a>
   </footer>
+  <!-- Toast for "being worked on" messages -->
+  <div id="toast" style="position:fixed; right:20px; bottom:20px; background:#111; color:#fff; padding:12px 16px; border-radius:8px; display:none; opacity:0.95; z-index:20000"></div>
+
+  <script>
+    // Show overlay when Start Quiz clicked
+    document.getElementById('startQuizBtn').addEventListener('click', () => {
+      document.getElementById('difficultyOverlay').style.display = 'block';
+    });
+
+    // Close overlay
+    document.getElementById('closeOverlay').addEventListener('click', () => {
+      document.getElementById('difficultyOverlay').style.display = 'none';
+    });
+    document.getElementById('overlayBackdrop').addEventListener('click', () => {
+      document.getElementById('difficultyOverlay').style.display = 'none';
+    });
+
+    // Notify-work handler for non-functional links/buttons
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.display = 'block';
+      clearTimeout(t._timeout);
+      t._timeout = setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest('a, button');
+      if (!el) return;
+      // anchors with href="#" or elements with class notify-work
+      if ((el.tagName === 'A' && el.getAttribute('href') === '#') || el.classList.contains('notify-work')) {
+        e.preventDefault();
+        showToast('This feature is being worked on.');
+      }
+    });
+  </script>
 </body>
 </html>

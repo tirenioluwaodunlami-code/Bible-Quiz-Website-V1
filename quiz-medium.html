@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Medium Quiz</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f8f3ea; color:#102a43; margin:0; }
+    .container { max-width:800px; margin:40px auto; padding:0 20px; }
+    .card { background:white; padding:24px; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,0.06); }
+    h1 { margin-top:0 }
+    .options { display:flex; flex-direction:column; gap:12px; margin-top:18px }
+    .option-btn { padding:12px 16px; border-radius:10px; border:1px solid #e2e8f0; background:#fff; cursor:pointer; text-align:left }
+    .option-btn.correct { background:#d1fae5; border-color:#10b981 }
+    .option-btn.wrong { background:#fee2e2; border-color:#ef4444 }
+    .controls { margin-top:18px; display:flex; gap:10px; }
+    .btn { padding:10px 14px; border-radius:8px; border:none; cursor:pointer }
+    .btn-primary { background:#d4a73a; color:#111 }
+    .small { font-size:0.9rem; color:#334155 }
+    .score { margin-top:12px }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Medium Quiz</h1>
+      <div id="quiz-area">
+        <p class="small">Loading questions...</p>
+      </div>
+      <div class="controls">
+        <button id="nextBtn" class="btn btn-primary" style="display:none">Next</button>
+        <a href="Index.html" class="btn" style="background:#eef2ff; text-decoration:none; color:#102a43; border-radius:8px; padding:10px 14px">Back</a>
+      </div>
+      <div id="score" class="score small" style="display:none"></div>
+    </div>
+  </div>
+
+  <script>
+    async function loadQnA() {
+      try {
+        const res = await fetch('medium quiz qna.txt');
+        if (!res.ok) throw new Error('Could not load questions');
+        const text = await res.text();
+        return parseQnA(text);
+      } catch (e) {
+        document.getElementById('quiz-area').innerHTML = '<p class="small">Unable to load questions. Serve this folder with a local HTTP server (e.g. `python -m http.server`).</p>';
+        console.error(e);
+        return [];
+      }
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function parseQnA(raw) {
+      const blocks = raw.split(/\r?\n\s*\r?\n/).map(b => b.trim()).filter(Boolean);
+      const qa = blocks.map(block => {
+        const lines = block.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        const question = lines[0] || '';
+        const opts = [];
+        for (let i = 1; i < lines.length; i++) {
+          let line = lines[i];
+          let isCorrect = false;
+          if (line.startsWith('*')) { line = line.slice(1).trim(); isCorrect = true; }
+          opts.push({ text: line, isCorrect });
+        }
+        shuffle(opts);
+        const options = opts.map(o => o.text);
+        const correctIndex = opts.findIndex(o => o.isCorrect);
+        return { question, options, correctIndex };
+      });
+      shuffle(qa);
+      return qa;
+    }
+
+    (async function init(){
+      const qlist = await loadQnA();
+      if (!qlist || qlist.length === 0) return;
+      let idx = 0; let score = 0; const quizArea = document.getElementById('quiz-area'); const nextBtn = document.getElementById('nextBtn'); const scoreEl = document.getElementById('score');
+
+      function renderQuestion() {
+        const q = qlist[idx];
+        quizArea.innerHTML = '';
+        const qEl = document.createElement('div');
+        qEl.innerHTML = `<div><strong>Question ${idx+1} of ${qlist.length}</strong></div><h3 style="margin:8px 0">${escapeHtml(q.question)}</h3>`;
+        const opts = document.createElement('div'); opts.className = 'options';
+        q.options.forEach((opt, i) => {
+          const btn = document.createElement('button'); btn.className = 'option-btn'; btn.textContent = opt;
+          btn.addEventListener('click', () => onChoose(i, btn, q.correctIndex));
+          opts.appendChild(btn);
+        });
+        qEl.appendChild(opts);
+        quizArea.appendChild(qEl);
+        nextBtn.style.display = 'none';
+      }
+
+      function onChoose(i, btn, correctIndex) {
+        document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+        if (i === correctIndex) { btn.classList.add('correct'); score++; }
+        else { btn.classList.add('wrong'); document.querySelectorAll('.option-btn')[correctIndex].classList.add('correct'); }
+        nextBtn.style.display = 'inline-block';
+        if (idx === qlist.length - 1) nextBtn.textContent = 'Finish'; else nextBtn.textContent = 'Next';
+      }
+
+      nextBtn.addEventListener('click', () => {
+        idx++;
+        if (idx < qlist.length) {
+          renderQuestion();
+        } else {
+          quizArea.innerHTML = `<h3>Quiz complete</h3><p class="small">You scored ${score} out of ${qlist.length}.</p>`;
+          nextBtn.style.display = 'none';
+          scoreEl.style.display = 'block';
+          scoreEl.textContent = `Score: ${score} / ${qlist.length}`;
+        }
+      });
+
+      renderQuestion();
+    })();
+
+    function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  </script>
+</body>
+</html>
